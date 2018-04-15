@@ -1,4 +1,4 @@
-# An implementation of a simple 2-layer Neural Net using just PyTorch Tensors ( no autograd)
+# An implementation of a simple 2-layer Neural Net using just PyTorch(with Autograd)
 
 # Libraries
 import pygal
