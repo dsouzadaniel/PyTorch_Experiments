@@ -34,9 +34,19 @@ class LitModel(LightningModule):
 
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        tensorboard_logs = {'train_loss': avg_loss, 'step': self.current_epoch}
-        return {'train_loss': avg_loss, 'log': tensorboard_logs}
+        tensorboard_logs = {'loss/train': avg_loss,  'step': self.current_epoch}
+        return {'loss/train': avg_loss, 'log': tensorboard_logs}
 
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        y_hat = self.forward(x)
+        loss = F.cross_entropy(y_hat, y)
+        return {'loss': loss}
+
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        tensorboard_logs = {'loss/val': avg_loss,  'step': self.current_epoch}
+        return {'loss/val': avg_loss, 'log': tensorboard_logs}
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=1e-4)
@@ -47,11 +57,17 @@ class LitModel(LightningModule):
         loader = DataLoader(mnist_train, batch_size=64, num_workers=4, shuffle=True)
         return loader
 
+    def val_dataloader(self):
+        transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+        mnist_test = MNIST(os.getcwd(), train=False, download=True, transform=transform)
+        loader = DataLoader(mnist_test, batch_size=64, num_workers=4, shuffle=False)
+        return loader
+
 
 from pytorch_lightning import Trainer
 
 model = LitModel()
 
-trainer = Trainer()
+trainer = Trainer(max_epochs=5)
 
 trainer.fit(model)
